@@ -14,7 +14,7 @@ def call(username: str,
          password: str,
          attributes: list,   
          time_window: int = 30,
-         operation: str = 'AVG',
+         operation: str = 'MAX',
          output_format: str = 'CONSOLE'):
 
     api_connection = HiveAPIConnectionV6(username, password)
