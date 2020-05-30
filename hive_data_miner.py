@@ -1,12 +1,9 @@
-import datetime
 import fire
 import time
 
+from datetime import datetime
 from enum import Enum
 from hive_api_v6 import HiveAPIConnectionV6
-
-class OutputFormat(Enum):
-    CONSOLE = 1
 
 # Fire command line entry point. Key arguments:
 # - attributes: comma separated list of attributes to retrieve, should be the first part of the
@@ -18,7 +15,7 @@ def call(username: str,
          attributes: list,   
          time_window: int = 30,
          operation: str = 'AVG',
-         output_format: OutputFormat = OutputFormat.CONSOLE):
+         output_format: str = 'CONSOLE'):
 
     api_connection = HiveAPIConnectionV6(username, password)
     channel_ids = []
@@ -45,8 +42,12 @@ def call(username: str,
     for channel in raw_data.get('channels'):
         data_set[channel.get('id')] = channel.get('values')
     
-    if (output_format == OutputFormat.CONSOLE):
+    if (str.upper(output_format) == 'CONSOLE'):
         return console_pretty_print(data_set)
+    elif (str.upper(output_format) == 'JSON'):
+        return filtered_json(data_set)
+    else:
+        raise ValueError(f'Invalid value {output_format} for --output_format')
 
 def console_pretty_print(data_set):
     print('')
@@ -57,8 +58,16 @@ def console_pretty_print(data_set):
             print('{}\t{}'.format(unix_ts_ms_to_dt(element[0]), str(element[1])))
         print('')
 
+def filtered_json(data_set):
+    filtered_data = {}
+
+    for attribute in data_set.items():
+        filtered_data[attribute[0].split('@')[0]] = attribute[1]
+
+    return filtered_data
+
 def unix_ts_ms_to_dt(unix_ts):
-    return datetime.fromtimestamp(int(unix_ts) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.fromtimestamp(int(unix_ts) / 1000).strftime('%Y-%m-%d %H:%M:%S')
 
 if __name__ == '__main__':
     fire.Fire(call)
